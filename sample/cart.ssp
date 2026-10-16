@@ -1,0 +1,19 @@
+type Item = {name: Str, price: Int where _ >= 0, qty: Int where _ > 0}
+
+fn total(items: List[Item]) -> Int
+  post r >= 0
+= items.map(_.price * _.qty).sum
+
+fn discount(amount: Int where _ >= 0, pct: Int) -> Int
+  pre pct >= 0 and pct <= 100
+  post r <= amount
+= amount - amount * pct / 100
+
+fn main() -> Unit ! log
+= do
+  pen = Item{name: "pen", price: 3, qty: 4}
+  book = Item{name: "book", price: 12, qty: 1}
+  log("total: {discount(total([pen, book]), 10)}")
+
+test empty = total([]) == 0
+test sale = discount(24, 10) == 22

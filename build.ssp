@@ -1,0 +1,320 @@
+// The SSPUR landing page at sspurlang.github.io, built like Pulse and the package site.
+//
+//   sspur run build.ssp [offline] [OUT_DIR]
+//
+// It reads the package registry's index and the latest sspur release, checks, runs and tests
+// the code sample with the installed sspur ($SSPUR, else sspur on the PATH), and fills the
+// templates. `offline` reads fixtures/ instead of the network. OUT_DIR defaults to _site.
+// Run it from the repository root. Any failure exits 1, so the last good deploy stays up.
+
+type Pkg = {name: Str, description: Str, latest: Str, versions: Int, keywords: List[Str], updated: Str, yanked: Bool, deprecated: Opt[Str]}
+
+type Index = {schema: Int, packages: List[Pkg]}
+
+type Release = {tag_name: Str, html_url: Str, published_at: Str}
+
+type Opts = {offline: Bool, out: Str}
+
+type Oops = Oops{msg: Str}
+
+type Tok = {html: Str, next: Int, fx: Bool, title: Bool}
+
+// ---------- text ----------
+
+fn esc(s: Str) -> Str
+= s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
+
+fn month(m: Str) -> Str
+= ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].get(m.to_int.or(1) - 1).or("")
+
+// 2026-10-16T14:50:48Z to 16 Oct 2026.
+fn nice_date(iso: Str) -> Str
+= match iso.take(10).split("-")
+  | [y, m, d] => "{d.to_int.or(0)} {month(m)} {y}"
+  | _ => iso
+
+fn plural(n: Int, one: Str, many: Str) -> Str
+= if n == 1 then "{n} {one}" else "{n} {many}"
+
+test dates = nice_date("2026-10-06T14:50:48Z") == "6 Oct 2026" and nice_date("x") == "x"
+
+// ---------- the code sample, highlighted at build time ----------
+// The same token classes as docs/assets/sspur-highlight.js, the grammar the docs use.
+
+fn keywords() -> List[Str]
+= "fn type test effect handle resume match if then else do for in while return var catch raise with where pre post ex pub use store svc ep extern kernel profile unsafe yield par own mut static asm migrate new dec and or not".words
+
+fn literals() -> List[Str]
+= ["true", "false", "none", "some", "ok", "err"]
+
+fn effects() -> List[Str]
+= "log fail div conc fs io time env proc net ffi db rand yield gpu mmio irq".words
+
+fn titled() -> List[Str]
+= ["fn", "test", "type", "effect", "store", "svc"]
+
+fn ops() -> List[Str]
+= ["=>", ":=", "->", "..", "==", "!=", "<=", ">="]
+
+fn span(cls: Str, text: Str) -> Str
+= "<span class=\"{cls}\">{esc(text)}</span>"
+
+fn is_digit(c: Str) -> Bool
+= c.len == 1 and "0123456789".contains(c)
+
+fn is_word(c: Str) -> Bool
+= c.is_alpha or c == "_" or is_digit(c)
+
+fn at(cs: List[Str], i: Int) -> Str
+= cs.get(i).or("")
+
+// The index just past the run of characters from i that satisfy p.
+fn run_end(cs: List[Str], i: Int, p: Str -> Bool) -> Int ! div
+= do
+  var j = i
+  while j < cs.len and p(cs[j])
+    j := j + 1
+  j
+
+// The index just past a string literal that opens at i, skipping escapes and interpolations.
+fn string_end(cs: List[Str], i: Int) -> Int ! div
+= do
+  var j = i + 1
+  var depth = 0
+  var inner = false
+  var done = false
+  while not done and j < cs.len
+    c = cs[j]
+    if c == "\\" then j := j + 2 else do
+      if depth > 0 and c == "\"" then inner := not inner
+      if not inner and c == "\{" then depth := depth + 1
+      if not inner and c == "}" and depth > 0 then depth := depth - 1
+      if depth == 0 and c == "\"" then done := true
+      j := j + 1
+  j
+
+fn string_html(s: Str) -> Str ! div
+= do
+  cs = s.chars
+  var i = 0
+  var out = ""
+  var lit = ""
+  while i < cs.len
+    c = cs[i]
+    if c == "\\" then do
+      lit := lit + c + at(cs, i + 1)
+      i := i + 2
+    else if c == "\{" then do
+      out := out + span("str", lit)
+      lit := ""
+      j = brace_end(cs, i)
+      out := out + "<span class=\"subst\">\{" + highlight_line(cs.drop(i + 1).take(j - i - 2).join("")) + "}</span>"
+      i := j
+    else do
+      lit := lit + c
+      i := i + 1
+  out + span("str", lit)
+
+fn brace_end(cs: List[Str], i: Int) -> Int ! div
+= do
+  var j = i + 1
+  var depth = 1
+  while depth > 0 and j < cs.len
+    if cs[j] == "\{" then depth := depth + 1
+    if cs[j] == "}" then depth := depth - 1
+    j := j + 1
+  j
+
+fn word_html(w: Str, fx: Bool, title: Bool) -> Str
+= if keywords().contains(w) then span("kw", w) else if literals().contains(w) then span("lit", w) else if title then span("ti", w) else if fx and effects().contains(w) then span("fx", w) else if w.take(1) != w.take(1).lower then span("ty", w) else esc(w)
+
+// One token from i. `fx` is true inside an effect row, `title` right after fn, type, test...
+fn token(cs: List[Str], i: Int, fx: Bool, title: Bool) -> Tok ! div
+= do
+  c = cs[i]
+  two = c + at(cs, i + 1)
+  if two == "//" then Tok{html: span("com", cs.drop(i).join("")), next: cs.len, fx, title: false}
+  else if c == "\"" then do
+    j = string_end(cs, i)
+    Tok{html: string_html(cs.drop(i).take(j - i).join("")), next: j, fx, title: false}
+  else if c == "!" and at(cs, i + 1) == " " then Tok{html: span("op", "!"), next: i + 1, fx: true, title: false}
+  else if ops().contains(two) then Tok{html: span("op", two), next: i + 2, fx: false, title: false}
+  else if c == "=" then Tok{html: esc(c), next: i + 1, fx: false, title: false}
+  else if is_digit(c) then do
+    j = run_end(cs, i, is_digit)
+    Tok{html: span("num", cs.drop(i).take(j - i).join("")), next: j, fx, title: false}
+  else if is_word(c) then do
+    j = run_end(cs, i, is_word)
+    w = cs.drop(i).take(j - i).join("")
+    Tok{html: word_html(w, fx, title), next: j, fx, title: titled().contains(w)}
+  else Tok{html: esc(c), next: i + 1, fx, title: title and c == " "}
+
+fn highlight_line(l: Str) -> Str ! div
+= do
+  cs = l.chars
+  var i = 0
+  var fx = false
+  var title = false
+  var out = ""
+  while i < cs.len
+    t = token(cs, i, fx, title)
+    out := out + t.html
+    i := t.next
+    fx := t.fx
+    title := t.title
+  out
+
+// Each line in its own span, so wrapped lines on a phone get a hanging indent.
+fn highlight(code: Str) -> Str ! div
+= code.trim.split("\n").map(l => "<span class=\"ln\">{if l == "" then " " else highlight_line(l)}</span>").join("")
+
+test highlights = do
+  h = highlight_line("fn total(items: List[Item]) -> Int ! log")
+  h == "<span class=\"kw\">fn</span> <span class=\"ti\">total</span>(items: <span class=\"ty\">List</span>[<span class=\"ty\">Item</span>]) <span class=\"op\">-&gt;</span> <span class=\"ty\">Int</span> <span class=\"op\">!</span> <span class=\"fx\">log</span>"
+
+test highlights_strings = do
+  h = highlight_line("log(\"a \{f(1)} <b>\") // done")
+  h.contains("<span class=\"subst\">\{f(<span class=\"num\">1</span>)}</span>") and h.contains("&lt;b&gt;") and h.ends_with("<span class=\"com\">// done</span>")
+
+test effect_row_ends_at_equals = highlight_line("x ! log = log").ends_with("= log")
+
+// ---------- packages ----------
+
+fn package_url(n: Str) -> Str
+= "https://sspurlang.github.io/sspur-packages/packages/{n}/"
+
+fn name_html(n: Str) -> Str
+= match n.split_once("/")
+  | some((scope, rest)) => "<span class=\"scope\">{esc(scope)}/</span>{esc(rest)}"
+  | none => esc(n)
+
+// How many packages the page shows.
+fn featured_n() -> Int
+= 6
+
+// Live packages, most recently updated first, then the ones with the most versions.
+fn featured(ps: List[Pkg]) -> List[Pkg]
+= ps.filter(p => not p.yanked and p.deprecated.is_none()).sort_by(_.updated).reverse.sort_by(p => 0 - p.versions).take(featured_n())
+
+fn card_html(p: Pkg) -> Str
+= "<li class=\"pkg card\"><a class=\"pkg-link\" href=\"{esc(package_url(p.name))}\"><span class=\"pkg-name\">{name_html(p.name)}</span><span class=\"pill acc\">{esc(p.latest)}</span></a><p class=\"pkg-desc\">{esc(p.description)}</p><p class=\"pkg-meta\"><code>sspur add {esc(p.name)}</code><span class=\"muted small\">updated {esc(nice_date(p.updated))}</span></p></li>"
+
+fn sample_pkgs() -> List[Pkg]
+= [Pkg{name: "old", description: "", latest: "1.0.0", versions: 9, keywords: [], updated: "2026-01-01", yanked: true, deprecated: none}, Pkg{name: "a", description: "", latest: "0.1.0", versions: 1, keywords: [], updated: "2026-10-01", yanked: false, deprecated: none}, Pkg{name: "acme/b", description: "x < y", latest: "0.3.0", versions: 3, keywords: [], updated: "2026-09-01", yanked: false, deprecated: none}, Pkg{name: "c", description: "", latest: "0.1.0", versions: 1, keywords: [], updated: "2026-10-05", yanked: false, deprecated: some("use a")}]
+
+test featured_skips_yanked_and_deprecated = featured(sample_pkgs()).map(_.name) == ["acme/b", "a"]
+
+test cards_escape = do
+  h = card_html(sample_pkgs()[2])
+  h.contains("x &lt; y") and h.contains("packages/acme/b/") and h.contains("<span class=\"scope\">acme/</span>b")
+
+// ---------- inputs ----------
+
+fn ua() -> Str
+= "sspurlang.github.io build (https://github.com/sspurlang/sspurlang.github.io)"
+
+fn http_once(url: Str, headers: List[(Str, Str)]) -> Res[Str, Str] ! net
+= do
+  r = http.req("GET", url) with headers := [("user-agent", ua())] + headers, timeout_ms := 30000
+  match http.send(r)
+  | err(e) => err(e.str)
+  | ok(resp) => if resp.status >= 200 and resp.status < 300 then ok(resp.body) else err("HTTP {resp.status}")
+
+fn get(url: Str, headers: List[(Str, Str)]) -> Res[Str, Str] ! net, time
+= do
+  var r = http_once(url, headers)
+  for t in 1..4
+    if r.is_err then do
+      sleep_ms(1500 * t * t)
+      r := http_once(url, headers)
+  r
+
+fn index_url() -> Str
+= "https://raw.githubusercontent.com/sspurlang/sspur-packages/main/index.json"
+
+fn release_url() -> Str
+= "https://api.github.com/repos/sspurlang/sspur/releases/latest"
+
+fn load(o: Opts, fixture: Str, url: Str, headers: List[(Str, Str)]) -> Res[Str, Str] ! fs, net, time
+= if o.offline then read_file("fixtures/{fixture}") else get(url, headers)
+
+fn version_ok(tag: Str) -> Bool
+= tag.starts_with("v") and tag.drop(1).split(".").len == 3 and tag.drop(1).split(".").all(p => p.to_int.is_some())
+
+test versions = version_ok("v0.13.0") and not version_ok("0.13.0") and not version_ok("v1.x.0")
+
+// Runs sspur on the sample and gives its output; a sample that doesn't check fails the build.
+fn sspur_out(bin: Str, a: List[Str]) -> Res[Str, Str] ! proc
+= match run_cmd(bin, a, "")
+  | ok((0, out, msg)) => ok((out + msg).trim)
+  | ok((code, out, msg)) => err("sspur {a.join(" ")} exited {code}: {(out + msg).trim}")
+  | err(e) => err(e)
+
+fn terminal(cmds: List[(Str, Str)]) -> Str
+= cmds.map(c => "<span class=\"ln\"><span class=\"prompt\">$ </span>{esc(c.0)}</span>" + c.1.split("\n").map(l => "<span class=\"ln out\">{esc(l)}</span>").join("")).join("")
+
+// ---------- output ----------
+
+fn fill(tpl: Str, vars: List[(Str, Str)]) -> Str
+= vars.fold(tpl, (acc, kv) => acc.replace("@{kv.0}@", kv.1))
+
+test fill_vars = fill("<b>@A@ @B@ @A@</b>", [("A", "1"), ("B", "x")]) == "<b>1 x 1</b>"
+
+fn put(path: Str, text: Str) -> Unit ! fs, fail[Oops]
+= need(write_file(path, text), "cannot write {path}")
+
+// The value of r, or a build failure that says what it was for.
+fn need[T, E: Show](r: Res[T, E], what: Str) -> T ! fail[Oops]
+= match r
+  | ok(x) => x
+  | err(e) => raise Oops{msg: "{what}: {e}"}
+
+// `sspur run` keeps flags it knows for itself, so the options are plain words.
+fn opts(a: List[Str]) -> Opts
+= do
+  off = a.any(x => x == "offline" or x == "--offline")
+  rest = a.filter(x => x != "offline" and x != "--offline")
+  Opts{offline: off, out: rest.first.or("_site")}
+
+test options = opts(["offline", "/tmp/x"]) == Opts{offline: true, out: "/tmp/x"} and opts([]) == Opts{offline: false, out: "_site"} and opts(["out"]).out == "out"
+
+fn build(o: Opts, bin: Str) -> Str ! fs, net, time, proc, div, fail[Oops]
+= do
+  idx = need(json.decode[Index](need(load(o, "index.json", index_url(), []), "index")), "index")
+  if idx.packages.is_empty() then raise Oops{msg: "index: no packages"}
+  rel_text = need(load(o, "release.json", release_url(), [("accept", "application/vnd.github+json"), ("x-github-api-version", "2022-11-28")]), "release")
+  rel = need(json.decode[Release](rel_text), "release")
+  if not version_ok(rel.tag_name) then raise Oops{msg: "release: odd tag {rel.tag_name}"}
+  checked = need(sspur_out(bin, ["check", "sample/cart.ssp"]), "sample")
+  ran = need(sspur_out(bin, ["run", "sample/cart.ssp"]), "sample")
+  tested = need(sspur_out(bin, ["test", "sample/cart.ssp"]), "sample")
+  checker = need(sspur_out(bin, ["--version"]), "sspur")
+  code = need(read_file("sample/cart.ssp"), "sample")
+  tpl = need(read_file("template/index.html"), "template")
+  missing = need(read_file("template/404.html"), "template")
+  ps = featured(idx.packages)
+  n = idx.packages.len
+  vars = [("VERSION", esc(rel.tag_name.drop(1))), ("TAG", esc(rel.tag_name)), ("RELEASE_URL", esc(rel.html_url)), ("RELEASE_DATE", esc(nice_date(rel.published_at))), ("CODE", highlight(code)), ("OUTPUT", terminal([("sspur run cart.ssp", ran), ("sspur test cart.ssp", tested)])), ("CHECKER", esc(checker)), ("PKG_COUNT", "{n}"), ("PKG_NOUN", if n == 1 then "package" else "packages"), ("PACKAGES", ps.map(card_html).join("")), ("SHOWN_LABEL", if ps.len < n then "{ps.len} of {n}" else plural(n, "package", "packages"))]
+  page = fill(tpl, vars)
+  left = unfilled(page)
+  if not left.is_empty() then raise Oops{msg: "template: unfilled {left.join(", ")}"}
+  made = mkdir_all(o.out + "/assets")
+  put(o.out + "/index.html", page)
+  put(o.out + "/404.html", fill(missing, vars))
+  for f in list_dir("assets").or([])
+    need(copy_file("assets/{f}", "{o.out}/assets/{f}"), "cannot copy {f}")
+  "{rel.tag_name}, {plural(n, "package", "packages")} ({ps.len} shown), sample: {checked}"
+
+// Placeholders left in a page: @NAME@ with NAME in capitals.
+fn unfilled(page: Str) -> List[Str]
+= regex("@[A-Z_]+@").map(r => r.find_all(page)).or([])
+
+test unfilled_found = unfilled("a @X_Y@ b @ c") == ["@X_Y@"] and unfilled("mail a@b.c").is_empty()
+
+fn main() -> Unit ! env, fs, net, time, proc, log, div
+= do
+  o = opts(args())
+  msg = catch build(o, env_var("SSPUR").or("sspur"))
+    | Oops{msg} => "FAILED {msg}"
+  log(if msg.starts_with("FAILED ") then "build: {msg.drop(7)}" else "built {o.out}: {msg}")
+  if msg.starts_with("FAILED ") then exit(1)

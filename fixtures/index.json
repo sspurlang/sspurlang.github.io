@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "packages": [
+    {
+      "name": "featureflags",
+      "description": "Feature flags: targeting rules, segments, prerequisites, stable percentage rollouts, OpenFeature-style details, JSON definitions and a SQLite store with audit",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T19:59:23Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "lists",
+      "description": "List utilities beyond the builtins: windows, splits, grouping, zips, set operations, combinatorics, searching and safe index edits",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T20:01:14Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "maps",
+      "description": "Map utilities (merge with resolvers, invert, filter and map keys and values, counters, multimaps, diffs) and dynamic JSON values with paths, pointers and merge patches",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T20:03:11Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "numeric",
+      "description": "Number theory, exact rounding modes, primes, combinatorics and statistics for Int, F64 and BigInt, pure and tested in both tiers",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T20:04:46Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "pagination",
+      "description": "Offset, page-number and keyset pagination: clamped requests, signed cursors, page ranges for UIs, Link headers and JSON envelopes",
+      "latest": "0.2.0",
+      "versions": 3,
+      "keywords": [],
+      "updated": "2026-10-16T19:19:15Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "passwords",
+      "description": "Password policy after NIST SP 800-63B, and Argon2id hashing",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T16:11:24Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "sessions",
+      "description": "Session tokens stored as SHA-256 digests, secure cookies and CSRF tokens for HTTP services",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T16:11:49Z",
+      "yanked": false,
+      "deprecated": null
+    },
+    {
+      "name": "strings",
+      "description": "String utilities in the spirit of Apache Commons StringUtils: case, padding, graphemes, distances, wrapping, slugs, escaping",
+      "latest": "0.1.0",
+      "versions": 1,
+      "keywords": [],
+      "updated": "2026-10-16T19:57:58Z",
+      "yanked": false,
+      "deprecated": null
+    }
+  ]
+}
