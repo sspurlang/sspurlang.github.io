@@ -208,3 +208,12 @@ html:not(.js) .tabs,html:not(.js) .copy-btn{display:none}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 @media (forced-colors:active){.pitch em,.stat-v{color:CanvasText;background:none}}
 @media (max-width:420px){.kicker-date,.tab .and{display:none}.code,.term{font-size:12.5px;padding:14px}}
+.lost-card{margin:22px 0 26px;max-width:760px}
+.lost-term{white-space:pre;overflow-x:auto}
+.lost-err{color:#ff8a8f;font-weight:700}
+.lost-dim{color:#7c8494}
+.lost-caret{color:#ff8a8f}
+.lost-help{color:#7fe0a8}
+.lost-term.typing .line{opacity:0;animation:lost-in .28s ease-out forwards}
+@keyframes lost-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.lost .actions{display:flex;flex-wrap:wrap;gap:10px}

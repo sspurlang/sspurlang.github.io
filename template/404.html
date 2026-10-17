@@ -21,9 +21,18 @@
 </header>
 <main id="main" class="wrap lost">
   <p class="kicker">404</p>
-  <h1>No such page</h1>
-  <p class="lede">This page doesn't exist, which is a contract violation of a kind. Try one of these:</p>
-  <p class="actions"><a class="btn primary" href="/">SSPUR home</a><a class="btn" href="/sspur/">Docs</a><a class="btn" href="/sspur/play/">Playground</a><a class="btn" href="/sspur-packages/">Packages</a></p>
+  <h1>That page doesn't check.</h1>
+  <p class="lede">The compiler looked everywhere. Here's what it says:</p>
+  <figure class="code-card lost-card" aria-label="A compiler error for the missing page">
+    <div class="code-bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="file">terminal</span></div>
+    <pre class="term lost-term" id="lost-term"><span class="prompt">$ </span><span class="out">sspur open <span id="lost-path">/this/page</span></span>
+<span class="lost-err">error[E_NOT_FOUND]</span><span class="out">: no page at <span class="lost-p">/this/page</span></span>
+<span class="lost-dim">   |</span>
+<span class="lost-dim"> 1 |</span> <span class="out lost-p">/this/page</span>
+<span class="lost-dim">   |</span> <span class="lost-caret" id="lost-caret">^^^^^^^^^^</span> <span class="lost-dim">not found on sspurlang.github.io</span>
+<span class="lost-help" id="lost-help">   = help: try the home page: /</span></pre>
+  </figure>
+  <p class="actions"><a class="btn primary" id="lost-fix" href="/">Apply the fix</a><a class="btn" id="lost-home" href="/">SSPUR home</a><a class="btn" href="/sspur/">Docs</a><a class="btn" href="/sspur/play/">Playground</a><a class="btn" href="/sspur-packages/">Packages</a></p>
 </main>
 <footer class="foot">
   <div class="wrap">
@@ -31,5 +40,6 @@
   </div>
 </footer>
 <script src="/assets/site.js" defer></script>
+<script src="/assets/lost.js" defer></script>
 </body>
 </html>
