@@ -44,7 +44,7 @@
 <main id="main">
 <section class="hero wrap" aria-labelledby="hero-title">
   <div class="hero-copy">
-    <a class="kicker" href="@RELEASE_URL@"><span class="dot" aria-hidden="true"></span>Version @VERSION@ is out<span class="muted kicker-date">@RELEASE_DATE@</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <a class="kicker" id="release-pill" href="@RELEASE_URL@"><span class="dot" aria-hidden="true"></span>Version <span id="release-version">@VERSION@</span> is out<span class="muted kicker-date" id="release-date">@RELEASE_DATE@</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     <div class="brand">
       <button class="hero-logo" type="button" data-egg-logo aria-label="The SSPUR logo"><img src="assets/sspur.svg" width="88" height="88" alt="SSPUR logo"></button>
       <h1 id="hero-title">SSPUR</h1>
@@ -162,7 +162,7 @@
 
 <footer class="foot">
   <div class="wrap">
-    <p class="foot-lead">Built every day by an SSPUR program from the registry's index and the latest release. No servers, no keys, no trackers.</p>
+    <p class="foot-lead">Rebuilt every hour by an SSPUR program from the registry's index and the latest release. No servers, no keys, no trackers.</p>
     <p class="foot-links"><a href="https://sspurlang.github.io/sspur/">Docs</a><a href="https://sspurlang.github.io/sspur/release-notes.html">Release notes</a><a href="https://github.com/sspurlang/sspur/releases/latest">Downloads</a><a href="https://github.com/sspurlang/sspurlang.github.io">Source of this page</a></p>
     <p class="made">Created by <a href="https://utkarshavardhana.github.io/" target="_blank" rel="noopener">Utkarsha Vardhana</a></p>
   </div>

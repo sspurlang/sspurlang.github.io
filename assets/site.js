@@ -123,3 +123,22 @@
     if (typed === "sspur") party();
   });
 })();
+
+// The build pins the release it saw; a newer one shows up here as soon as it's published.
+(function () {
+  var v = document.getElementById("release-version");
+  if (!v || !window.fetch) return;
+  fetch("https://api.github.com/repos/sspurlang/sspur/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (rel) {
+      if (!rel || !rel.tag_name) return;
+      var tag = String(rel.tag_name).replace(/^v/, "");
+      if (tag === v.textContent) return;
+      v.textContent = tag;
+      var pill = document.getElementById("release-pill");
+      if (pill && rel.html_url) pill.href = rel.html_url;
+      var d = document.getElementById("release-date");
+      if (d && rel.published_at) d.textContent = new Date(rel.published_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    })
+    .catch(function () {});
+})();
