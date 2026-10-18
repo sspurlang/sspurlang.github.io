@@ -21,6 +21,10 @@ type Tok = {html: Str, next: Int, fx: Bool, title: Bool}
 
 // ---------- text ----------
 
+// The playground link that opens `code`, in its share format: raw deflate, base64url, in the fragment.
+fn play_url(code: Str) -> Str
+= "https://sspurlang.github.io/sspur/play/#code={deflate.compress(code).base64url}"
+
 fn esc(s: Str) -> Str
 = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
 
@@ -294,7 +298,7 @@ fn build(o: Opts, bin: Str) -> Str ! fs, net, time, proc, div, fail[Oops]
   missing = need(read_file("template/404.html"), "template")
   ps = featured(idx.packages)
   n = idx.packages.len
-  vars = [("VERSION", esc(rel.tag_name.drop(1))), ("TAG", esc(rel.tag_name)), ("RELEASE_URL", esc(rel.html_url)), ("RELEASE_DATE", esc(nice_date(rel.published_at))), ("CODE", highlight(code)), ("OUTPUT", terminal([("sspur run cart.ssp", ran), ("sspur test cart.ssp", tested)])), ("CHECKER", esc(checker)), ("PKG_COUNT", "{n}"), ("PKG_NOUN", if n == 1 then "package" else "packages"), ("PACKAGES", ps.map(card_html).join("")), ("SHOWN_LABEL", if ps.len < n then "{ps.len} of {n}" else plural(n, "package", "packages"))]
+  vars = [("VERSION", esc(rel.tag_name.drop(1))), ("TAG", esc(rel.tag_name)), ("RELEASE_URL", esc(rel.html_url)), ("RELEASE_DATE", esc(nice_date(rel.published_at))), ("CODE", highlight(code)), ("PLAY_URL", esc(play_url(code))), ("OUTPUT", terminal([("sspur run cart.ssp", ran), ("sspur test cart.ssp", tested)])), ("CHECKER", esc(checker)), ("PKG_COUNT", "{n}"), ("PKG_NOUN", if n == 1 then "package" else "packages"), ("PACKAGES", ps.map(card_html).join("")), ("SHOWN_LABEL", if ps.len < n then "{ps.len} of {n}" else plural(n, "package", "packages"))]
   page = fill(tpl, vars)
   left = unfilled(page)
   if not left.is_empty() then raise Oops{msg: "template: unfilled {left.join(", ")}"}
