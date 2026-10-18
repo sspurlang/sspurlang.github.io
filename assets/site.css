@@ -65,6 +65,9 @@ code,pre,kbd{font-family:var(--mono);font-size:.9em}
 .btn:active{transform:scale(.95)}
 .btn.primary{background:linear-gradient(135deg,#22d3ee,#6366f1 55%,#a855f7);color:#fff;box-shadow:0 8px 20px -10px rgba(99,102,241,.8)}
 .btn.big{min-height:54px;padding:0 22px;border-radius:17px;font-size:1.05rem}
+.btn.try{border:1.5px solid transparent;background:linear-gradient(var(--card2),var(--card2)) padding-box,linear-gradient(135deg,#22d3ee,#6366f1 55%,#a855f7) border-box}
+.btn.try .ic{color:var(--acc)}.btn.try .ic path{fill:currentColor}
+@media (hover:hover) and (pointer:fine){.btn.try:hover{background:linear-gradient(var(--soft),var(--soft)) padding-box,linear-gradient(135deg,#22d3ee,#6366f1 55%,#a855f7) border-box}.btn.try:hover .ic{transform:scale(1.12)}}
 @media (hover:hover) and (pointer:fine){.btn:hover{background:color-mix(in srgb,var(--card2) 70%,var(--ink) 8%)}.btn.primary:hover{background:linear-gradient(135deg,#22d3ee,#6366f1 55%,#a855f7);filter:brightness(1.08) saturate(1.05);box-shadow:0 12px 26px -10px rgba(99,102,241,.95)}.btn:hover .ic{transform:translateX(2px)}}
 .btn .ic{transition:transform .2s var(--spring)}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--card2);color:var(--ink2);white-space:nowrap}
