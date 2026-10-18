@@ -91,6 +91,9 @@ code,pre,kbd{font-family:var(--mono);font-size:.9em}
 .play:hover{transform:translateY(-1px);box-shadow:0 10px 20px -8px rgba(99,102,241,1)}
 .play:active{transform:scale(.94)}
 .play:focus-visible{outline:2px solid #a5b4fc;outline-offset:3px}
+.code-card .pill.go .ic{width:13px;height:13px;stroke-width:3}
+@media (max-width:560px){.code-bar{flex-wrap:nowrap;gap:8px}.file{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pill-long{display:none}}
+@media (max-width:359px){.code-bar .dots{display:none}.play span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.play{padding:0 8px}}
 .code,.term{margin:0;padding:16px 18px;font:13.5px/1.6 var(--mono);white-space:pre;overflow-x:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
 @media (max-width:560px){.code,.term{font-size:12px;padding:14px 16px}}
 .code code,.term code{font-size:inherit}
