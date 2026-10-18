@@ -26,16 +26,18 @@ code,pre,kbd{font-family:var(--mono);font-size:.9em}
 
 /* header */
 .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 95%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
-.top-in{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;min-height:60px}
 .logo{display:inline-flex;align-items:center;gap:9px;text-decoration:none;min-height:44px;font-family:var(--display);font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
 .logo img{display:block;transition:transform .5s var(--spring)}
 .logo:active img{transform:scale(.88) rotate(-14deg)}
+.top-in{display:grid;grid-template-columns:auto 1fr auto auto;grid-template-areas:"logo nav gh theme";align-items:center;gap:8px;min-height:60px}
+.top-in .logo{grid-area:logo}.top-in .nav{grid-area:nav}.top-in .gh{grid-area:gh}.top-in .theme{grid-area:theme}
 .nav{display:flex;justify-content:flex-end;align-items:center;gap:2px;min-width:0}
-.nav-a{display:inline-flex;align-items:center;min-height:44px;padding:0 13px;border-radius:999px;text-decoration:none;font-weight:600;font-size:.95rem;color:var(--ink2);transition:background .2s,color .2s,transform .2s var(--spring)}
-.nav-a.icon-a{width:44px;padding:0;justify-content:center}
+.nav-a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 13px;border-radius:999px;text-decoration:none;font-weight:600;font-size:.95rem;color:var(--ink2);white-space:nowrap;transition:background .2s,color .2s,transform .2s var(--spring)}
+.nav-a.icon-a{width:44px;padding:0}
+.nav-a[aria-current=page]{color:var(--ink);background:var(--card2)}
 @media (hover:hover) and (pointer:fine){.nav-a:hover{background:var(--card2);color:var(--ink)}}
 .nav-a:active{transform:scale(.94)}
-@media (max-width:760px){.nav-a.wide{display:none}}
+@media (max-width:760px){.top-in{grid-template-areas:"logo . gh theme" "nav nav nav nav";row-gap:0}.top-in .nav{justify-content:space-between;margin:0 -8px 6px}.nav .nav-a{padding:0 8px}}
 .theme{width:44px;height:44px;border-radius:14px;border:0;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:transform .3s var(--spring)}
 .theme .ic{grid-area:1/1;transition:transform .45s var(--spring),opacity .2s}
 .theme .moon{opacity:0;transform:rotate(-90deg) scale(.5)}
